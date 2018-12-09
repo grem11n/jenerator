@@ -1,0 +1,54 @@
+#!/usr/bin/env groovy
+
+{% if credentials %}
+// Define variables as a context
+def environmentContext(cl) {
+  withCredentials([
+  {% for credential in credentials %}
+    {{credential.type}}(credentialsId: '{{credential.credentialsId}}', variable: '{{credential.variableName}}')
+  {% endfor %}
+  ] ) {
+{% if env %}
+    envContext(cl)
+{% else %}
+    cl() 
+{% endif %}
+  }
+}
+{% endif %}
+
+{% if env %}
+  {% if credentials %}
+def envContext(cl) {
+  {% else %}
+def environmentContext(cl) {
+  {% endif %}
+  withEnv([
+  {% for key, value in env.items() %}
+    '{{key|upper}}={{value|upper}}'
+  {% endfor %}
+  ]) {
+    cl()
+  }
+}
+{% endif %}
+
+node('{{node}}') {
+  checkout scm
+  environmentContext {
+  try {
+  {% for stage in stages %}
+    {% for name, content in stage.items() %}
+    stage('{{name}}') {
+    {% for step in content.steps %}
+      {{step}}
+    {% endfor %}
+    }
+  {% endfor %}
+  {% endfor %}
+  } catch(err) {
+  } finally {
+    {{post}}
+  }
+  }
+}
