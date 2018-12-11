@@ -65,18 +65,20 @@ def create_pipeline(conf_name, template):
     Read the configuration from YAML
     '''
 
+    # Extended slice syntax to ensure we cut only config name
+    yaml_dir = conf_name[::-1].replace(ARGS.config[::-1], '', 1)[::-1]
+
     with open(conf_name, 'r') as stream:
         try:
             config_data = yaml.load(stream)
+            config_data['workdir'] = yaml_dir
             if ARGS.verbose:
                 print("Payload from {}:\n{}".format(conf_name, config_data))
         except yaml.YAMLError as exc:
             print(exc)
 
-    # Extended slice syntax to ensure we cut only config name
-    w_dir = conf_name[::-1].replace(ARGS.config[::-1], '', 1)[::-1]
-    if any(fname == template for fname in os.listdir(w_dir)):
-        t_dir = w_dir
+    if any(fname == template for fname in os.listdir(yaml_dir)):
+        t_dir = yaml_dir
     else:
         t_dir = './templates'
 
